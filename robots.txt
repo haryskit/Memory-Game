@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://harshitsinghchouhan.github.io/Memory-Game/sitemap.xml
