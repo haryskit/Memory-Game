@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <div class="hero-section">
+                <h1 class="game-title">Memory<br>Master</h1>
+                <p class="game-subtitle">Unlock Your Brain's Potential</p>
+                <button id="play-now-btn" class="btn-primary btn-large">Play Now</button>
+            </div>
+
+            <div id="difficulty-section" class="difficulty-selector hidden">
+                <h3>Select Difficulty</h3>
+                <div class="buttons">
+                    <button class="btn-difficulty" data-level="easy">
+                        <div class="diff-icon">🌱</div>
+                        <div class="diff-info">
+                            <span class="level-name">Easy</span>
+                            <span class="level-desc">4x4 Grid • Warmup</span>
+                        </div>
+                    </button>
+                    <button class="btn-difficulty" data-level="medium">
+                        <div class="diff-icon">🚀</div>
+                        <div class="diff-info">
+                            <span class="level-name">Medium</span>
+                            <span class="level-desc">6x6 Grid • Balanced</span>
+                        </div>
+                    </button>
+                    <button class="btn-difficulty" data-level="hard">
+                        <div class="diff-icon">🧠</div>
+                        <div class="diff-info">
+                            <span class="level-name">Hard</span>
+                            <span class="level-desc">6x8 Grid • Expert</span>
+                        </div>
+                    </button>
+                </div>
+                <button id="back-to-home-btn" class="btn-text">Back</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card profile-card">
+                    <h3>Your Brain Profile</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Brain Age</span>
+                            <span id="profile-brain-age" class="stat-value">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Est. IQ</span>
+                            <span id="profile-iq" class="stat-value">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Memory Score</span>
+                            <span id="profile-score" class="stat-value">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card history-card">
+                    <h3>Recent Activity</h3>
+                    <div id="history-list" class="history-list">
+                        <p class="empty-state">No games played yet.</p>
+                        <!-- History items will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <header class="game-header">
+                <div class="stat-box">
+                    <span class="stat-label">Time</span>
+                    <span id="timer" class="stat-value">00:00</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Moves</span>
+                    <span id="moves" class="stat-value">0</span>
+                </div>
+                <button id="restart-btn" class="btn-icon" aria-label="Restart">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" />
+                    </svg>
+                </button>
+            </header>
+
+            <div id="game-board" class="game-board">
+                <!-- Cards will be generated here -->
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="game-over-modal" class="modal">
+            <div class="modal-content">
+                <h2>Assessment Complete</h2>
+                <p class="modal-subtitle">Here is your brain performance report</p>
+
+                <div class="assessment-grid">
+                    <div class="assessment-item">
+                        <span class="label">Brain Age</span>
+                        <span id="final-brain-age" class="value highlight">--</span>
+                    </div>
+                    <div class="assessment-item">
+                        <span class="label">Est. IQ</span>
+                        <span id="final-iq" class="value highlight">--</span>
+                    </div>
+                    <div class="assessment-item">
+                        <span class="label">Memory Score</span>
+                        <span id="final-memory-score" class="value highlight">--</span>
+                    </div>
+                </div>
+
+                <!-- Advanced Analysis (Hard Mode Only) -->
+                <div id="advanced-analysis" class="advanced-analysis hidden">
+                    <h3>Advanced Analysis</h3>
+                    <div class="analysis-row">
+                        <div class="analysis-item">
+                            <span class="label">Play Style</span>
+                            <span id="analysis-style" class="value-badge">--</span>
+                        </div>
+                        <div class="analysis-item">
+                            <span class="label">Retention</span>
+                            <span id="analysis-retention" class="value">--%</span>
+                        </div>
+                        <div class="analysis-item">
+                            <span class="label">Focus</span>
+                            <span id="analysis-focus" class="value">--</span>
+                        </div>
+                    </div>
+                    <p id="analysis-insight" class="analysis-insight">--</p>
+                </div>
+
+                <div class="final-stats-row">
+                    <span>Time: <strong id="final-time">00:00</strong></span>
+                    <span>Moves: <strong id="final-moves">0</strong></span>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="play-again-btn" class="btn-primary">Play Again</button>
+                    <button id="home-btn" class="btn-secondary">Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
