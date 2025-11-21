@@ -85,18 +85,66 @@
             <div class="dashboard-grid">
                 <div class="dashboard-card profile-card">
                     <h3>Your Brain Profile</h3>
-                    <div class="stats-grid">
-                        <div class="stat-item">
+
+                    <!-- Core Statistics Grid -->
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat-item">
                             <span class="stat-label">Brain Age</span>
                             <span id="profile-brain-age" class="stat-value">--</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Est. IQ</span>
+                        <div class="profile-stat-item">
+                            <span class="stat-label">Estimated IQ</span>
                             <span id="profile-iq" class="stat-value">--</span>
                         </div>
-                        <div class="stat-item">
+                        <div class="profile-stat-item">
                             <span class="stat-label">Memory Score</span>
                             <span id="profile-score" class="stat-value">--</span>
+                        </div>
+                        <div class="profile-stat-item">
+                            <span class="stat-label">Focus Score</span>
+                            <span id="profile-focus" class="stat-value">--</span>
+                        </div>
+                        <div class="profile-stat-item">
+                            <span class="stat-label">Current Rank</span>
+                            <span id="profile-rank" class="stat-value rank-badge">--</span>
+                        </div>
+                        <div class="profile-stat-item">
+                            <span class="stat-label">Games Played</span>
+                            <span id="profile-games" class="stat-value">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Performance Insights -->
+                    <div id="profile-insights" class="profile-insights hidden">
+                        <div class="insight-row">
+                            <span class="insight-icon">📈</span>
+                            <div class="insight-content">
+                                <span class="insight-label">Performance</span>
+                                <span id="profile-trend" class="insight-value">--</span>
+                            </div>
+                        </div>
+                        <div class="insight-row">
+                            <span class="insight-icon">💪</span>
+                            <div class="insight-content">
+                                <span class="insight-label">Strengths</span>
+                                <span id="profile-strengths" class="insight-value">--</span>
+                            </div>
+                        </div>
+                        <div class="insight-row">
+                            <span class="insight-icon">🎯</span>
+                            <div class="insight-content">
+                                <span class="insight-label">Focus On</span>
+                                <span id="profile-weaknesses" class="insight-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation -->
+                    <div id="profile-recommendation" class="profile-recommendation hidden">
+                        <div class="recommendation-icon">💡</div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-title">Suggestion</div>
+                            <div id="profile-suggestion" class="recommendation-text">--</div>
                         </div>
                     </div>
                 </div>
@@ -114,6 +162,13 @@
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
             <header class="game-header">
+                <button id="game-home-btn" class="btn-icon" aria-label="Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </button>
                 <div class="stat-box">
                     <span class="stat-label">Time</span>
                     <span id="timer" class="stat-value">00:00</span>
@@ -143,16 +198,21 @@
 
                 <div class="assessment-grid">
                     <div class="assessment-item">
+                        <span class="label">Rank</span>
+                        <span id="final-rank" class="value highlight">--</span>
+                    </div>
+                    <div class="assessment-item">
                         <span class="label">Brain Age</span>
                         <span id="final-brain-age" class="value highlight">--</span>
                     </div>
-                    <div class="assessment-item">
-                        <span class="label">Est. IQ</span>
-                        <span id="final-iq" class="value highlight">--</span>
-                    </div>
+
                     <div class="assessment-item">
                         <span class="label">Memory Score</span>
                         <span id="final-memory-score" class="value highlight">--</span>
+                    </div>
+                    <div class="assessment-item">
+                        <span class="label">Focus Score</span>
+                        <span id="final-focus-score" class="value highlight">--</span>
                     </div>
                 </div>
 

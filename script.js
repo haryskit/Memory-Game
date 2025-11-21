@@ -12,8 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalTimeDisplay = document.getElementById('final-time');
     const finalMovesDisplay = document.getElementById('final-moves');
     const finalBrainAge = document.getElementById('final-brain-age');
-    const finalIQ = document.getElementById('final-iq');
     const finalMemoryScore = document.getElementById('final-memory-score');
+    const finalRank = document.getElementById('final-rank');
+    const finalFocusScore = document.getElementById('final-focus-score');
 
     // Analysis Elements
     const advancedAnalysis = document.getElementById('advanced-analysis');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeBtn = document.getElementById('home-btn');
     const playNowBtn = document.getElementById('play-now-btn');
     const backToHomeBtn = document.getElementById('back-to-home-btn');
+    const gameHomeBtn = document.getElementById('game-home-btn');
     const difficultyBtns = document.querySelectorAll('.btn-difficulty');
 
     // Sections
@@ -37,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Profile Elements
     const profileBrainAge = document.getElementById('profile-brain-age');
-    const profileIQ = document.getElementById('profile-iq');
     const profileScore = document.getElementById('profile-score');
 
     // Game State
@@ -55,6 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let seenCards = new Map(); // { cardIndex: { value, firstSeenTime } }
     let moveHistory = []; // { time, card1, card2, isMatch, isError }
     let lastMoveTime = 0;
+    let mistakes = 0;
+    let currentCombo = 0;
+    let maxCombo = 0;
 
     // Emojis for cards
     const emojis = ['🚀', '🌟', '🎮', '🎨', '🎵', '🍕', '🌈', '🐱', '🐶', '🦄', '🍦', '🍩', '🌍', '🌺', '⚽', '🚗', '💎', '🎁', '🔔', '🔥', '⚡', '💡', '📷', '📚', '🧸', '🎈', '👑', '👓', '🧢', '👟', '🍔', '🍟'];
@@ -117,6 +121,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProfile();
     });
 
+    gameHomeBtn.addEventListener('click', () => {
+        gameScreen.classList.remove('active');
+        startScreen.classList.add('active');
+
+        // Reset Start Screen View
+        difficultySection.classList.add('hidden');
+        heroSection.classList.remove('hidden');
+        dashboardGrid.classList.remove('hidden');
+
+        loadHistory();
+        updateProfile();
+    });
+
     // Functions
     function startGame(level) {
         currentDifficulty = level;
@@ -157,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
         seenCards.clear();
         moveHistory = [];
         lastMoveTime = Date.now();
+        mistakes = 0;
+        currentCombo = 0;
+        maxCombo = 0;
 
         updateStats();
         clearInterval(timerInterval);
@@ -254,8 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (match) {
+            currentCombo++;
+            if (currentCombo > maxCombo) maxCombo = currentCombo;
             disableCards();
         } else {
+            currentCombo = 0;
+            // Check for mistake: if we've seen either card before and didn't match it
+            // Or simple logic: A mismatch is a mistake if we should have known better?
+            // For simplicity in this enhanced logic, let's count every mismatch as a potential mistake
+            // but weight it in the scoring.
+            // A stricter definition:
+            const index1 = card1.dataset.index;
+            const index2 = card2.dataset.index;
+            if (seenCards.has(index1) || seenCards.has(index2)) {
+                mistakes++;
+            }
+
             unflipCards();
         }
     }
@@ -308,8 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
         finalMovesDisplay.textContent = moves;
         finalTimeDisplay.textContent = timerDisplay.textContent;
         finalBrainAge.textContent = stats.brainAge + ' yrs';
-        finalIQ.textContent = stats.iq;
         finalMemoryScore.textContent = stats.memoryScore;
+        finalRank.textContent = stats.rank;
+        finalFocusScore.textContent = stats.focusScore;
 
         // Hard Mode Analysis
         if (currentDifficulty === 'hard') {
@@ -372,35 +407,119 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateMedicalStats(time, moves, difficulty) {
-        // Base values
-        let baseScore = 1000;
-        let difficultyMultiplier = 1;
+        // 1. Benchmarks & Config
+        const benchmarks = {
+            easy: { expectedMoves: 16, expectedTime: 30, difficultyMultiplier: 1 },
+            medium: { expectedMoves: 36, expectedTime: 90, difficultyMultiplier: 1.5 },
+            hard: { expectedMoves: 54, expectedTime: 150, difficultyMultiplier: 2.5 }
+        };
+        const config = benchmarks[difficulty];
 
-        if (difficulty === 'medium') difficultyMultiplier = 1.5;
-        if (difficulty === 'hard') difficultyMultiplier = 2;
+        // Dynamic Difficulty Scaling (DDS) - Check history for this difficulty
+        const history = JSON.parse(localStorage.getItem('memoryGameHistory') || '[]');
+        const recentGames = history.filter(g => g.difficulty === difficulty).slice(0, 5);
+        let ddsMultiplier = 1.0;
+        if (recentGames.length >= 3) {
+            const avgPF = recentGames.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / recentGames.length;
+            if (avgPF > 1.2) ddsMultiplier = 1.1; // Increase expectations slightly for good players
+        }
 
-        // Memory Score Calculation
-        const timePenalty = time * 2;
-        const movePenalty = moves * 5;
-        let memoryScore = Math.max(0, Math.round((baseScore * difficultyMultiplier) - timePenalty - movePenalty));
+        const expectedMoves = config.expectedMoves * ddsMultiplier;
+        const expectedTime = config.expectedTime * ddsMultiplier;
 
-        // Brain Age Calculation
-        let baseAge = 20;
-        let agePenalty = Math.max(0, (600 - memoryScore) / 20);
-        let brainAge = Math.round(baseAge + agePenalty);
+        // 2. Robust Performance Factor
+        const actualMoves = Math.max(moves, 1);
+        const actualTime = Math.max(time, 1);
+
+        // Diminishing returns using power functions
+        const moveScore = Math.pow(expectedMoves / actualMoves, 0.8);
+        const timeScore = Math.pow(expectedTime / actualTime, 0.6);
+
+        let performanceFactor = (moveScore * 0.6) + (timeScore * 0.4);
+
+        // 3. Penalties & Bonuses
+        // Mistake Penalty
+        // Mistake = mismatch where we had seen a card.
+        // Let's be lenient: mistakes relative to total pairs
+        const mistakeRatio = mistakes / totalPairs;
+        let mistakePenalty = 1 - (mistakeRatio * 0.1); // 10% penalty per full set of mistakes
+        mistakePenalty = Math.max(mistakePenalty, 0.75); // Max 25% penalty
+
+        // Combo Bonus
+        let comboBonus = 1 + (maxCombo * 0.02); // 2% per combo
+        comboBonus = Math.min(comboBonus, 1.25); // Max 25% bonus
+
+        // Consistency Factor
+        let consistencyFactor = 1.0;
+        if (recentGames.length >= 3) {
+            const times = recentGames.map(g => g.time || 0);
+            const mean = times.reduce((a, b) => a + b, 0) / times.length;
+            const variance = times.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / times.length;
+            const stdDev = Math.sqrt(variance);
+
+            // Lower stdDev is better. 
+            // If stdDev is 10s, factor = 0.9. If 0s, factor = 1.0.
+            consistencyFactor = 1 - (stdDev / 100);
+            consistencyFactor = Math.max(0.9, Math.min(consistencyFactor, 1.1));
+        }
+
+        // Final Adjusted Performance Factor
+        // We don't apply consistency to the raw score, but maybe to the Rank/IQ?
+        // Let's apply penalties/bonuses to the PF first
+        let adjustedPF = performanceFactor * mistakePenalty * comboBonus;
+
+        // 4. Calculate Stats
+
+        // Memory Score
+        let memoryScore = Math.round(1000 * adjustedPF * config.difficultyMultiplier);
+        const maxScore = 3000 * config.difficultyMultiplier;
+        if (memoryScore > maxScore) memoryScore = maxScore;
+        if (memoryScore < 0) memoryScore = 0;
+
+        // Brain Age
+        // Smoother curve: 25 + (1 - PF) * 35
+        let baseAge = 25;
+        let ageChange = (1.0 - adjustedPF) * 35;
+        let brainAge = Math.round(baseAge + ageChange);
         if (brainAge < 18) brainAge = 18;
-        if (brainAge > 90) brainAge = 90;
+        if (brainAge > 99) brainAge = 99;
 
-        // IQ Calculation
-        let baseIQ = 100;
-        let iqBonus = Math.max(0, (memoryScore - 500) / 10);
-        let iq = Math.round(baseIQ + iqBonus);
+        // IQ
+        // Smoother curve: 110 + (PF - 1) * 35
+        let baseIQ = 110;
+        let iqChange = (adjustedPF - 1.0) * 35;
+        // Apply consistency to IQ (stable players get better IQ estimates)
+        iqChange *= consistencyFactor;
+
+        let iq = Math.round(baseIQ + iqChange);
+        if (iq < 75) iq = 75;
+        if (iq > 160) iq = 160;
+
+        // Focus Score
+        // (mistakeFactor*0.4 + paceFactor*0.2 + timeFactor*0.2 + comboFactor*0.2) * 100
+        const mistakeFactor = Math.max(0, 1 - (mistakes / totalPairs)); // 1.0 if 0 mistakes
+        const timeFactor = Math.min(1, expectedTime / actualTime);
+        const comboFactor = Math.min(1, maxCombo / 5); // 5 combo = max
+
+        let focusScore = Math.round((mistakeFactor * 0.5 + timeFactor * 0.3 + comboFactor * 0.2) * 100);
+        if (focusScore > 100) focusScore = 100;
+
+        // Rank
+        let rank = "Learner";
+        if (adjustedPF > 1.4) rank = "Legend";
+        else if (adjustedPF > 1.25) rank = "Genius";
+        else if (adjustedPF > 1.10) rank = "Pro";
+        else if (adjustedPF > 0.95) rank = "Skilled";
 
         return {
             memoryScore,
             brainAge,
             iq,
+            rank,
+            focusScore,
             difficulty,
+            performanceFactor: adjustedPF, // Save for history
+            time, // Save for history
             date: new Date().toISOString()
         };
     }
@@ -441,19 +560,277 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProfile() {
         const history = JSON.parse(localStorage.getItem('memoryGameHistory') || '[]');
 
+        // Get all profile elements
+        const profileBrainAge = document.getElementById('profile-brain-age');
+        const profileIQ = document.getElementById('profile-iq');
+        const profileScore = document.getElementById('profile-score');
+        const profileFocus = document.getElementById('profile-focus');
+        const profileRank = document.getElementById('profile-rank');
+        const profileGames = document.getElementById('profile-games');
+        const profileTrend = document.getElementById('profile-trend');
+        const profileStrengths = document.getElementById('profile-strengths');
+        const profileWeaknesses = document.getElementById('profile-weaknesses');
+        const profileSuggestion = document.getElementById('profile-suggestion');
+        const profileInsights = document.getElementById('profile-insights');
+        const profileRecommendation = document.getElementById('profile-recommendation');
+
         if (history.length === 0) {
             profileBrainAge.textContent = '--';
             profileIQ.textContent = '--';
             profileScore.textContent = '--';
+            profileFocus.textContent = '--';
+            profileRank.textContent = '--';
+            profileGames.textContent = '0';
+            profileInsights.classList.add('hidden');
+            profileRecommendation.classList.add('hidden');
             return;
         }
 
-        const totalBrainAge = history.reduce((sum, game) => sum + game.brainAge, 0);
-        const totalIQ = history.reduce((sum, game) => sum + game.iq, 0);
-        const maxScore = Math.max(...history.map(game => game.memoryScore));
+        // === CORE STATISTICS ===
 
-        profileBrainAge.textContent = Math.round(totalBrainAge / history.length) + ' yrs';
-        profileIQ.textContent = Math.round(totalIQ / history.length);
-        profileScore.textContent = maxScore;
+        // Calculate averages
+        const avgBrainAge = Math.round(history.reduce((sum, g) => sum + g.brainAge, 0) / history.length);
+        const avgIQ = Math.round(history.reduce((sum, g) => sum + g.iq, 0) / history.length);
+        const maxScore = Math.max(...history.map(g => g.memoryScore));
+        const avgFocus = Math.round(history.reduce((sum, g) => sum + g.focusScore, 0) / history.length);
+
+        // Calculate current rank (based on recent performance)
+        const recentGames = history.slice(0, 5);
+        const avgRecentPF = recentGames.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / recentGames.length;
+        let currentRank = "Learner";
+        if (avgRecentPF > 1.4) currentRank = "Legend";
+        else if (avgRecentPF > 1.25) currentRank = "Genius";
+        else if (avgRecentPF > 1.10) currentRank = "Pro";
+        else if (avgRecentPF > 0.95) currentRank = "Skilled";
+
+        // === PERFORMANCE TRENDS ===
+        let trendText = "Stable";
+        let trendIndicator = "↔️";
+
+        if (history.length >= 10) {
+            const recent5 = history.slice(0, 5);
+            const previous5 = history.slice(5, 10);
+            const recentAvgPF = recent5.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / 5;
+            const previousAvgPF = previous5.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / 5;
+
+            if (recentAvgPF > previousAvgPF * 1.05) {
+                trendText = "Improving";
+                trendIndicator = "↗️";
+            } else if (recentAvgPF < previousAvgPF * 0.95) {
+                trendText = "Needs Practice";
+                trendIndicator = "↘️";
+            }
+        } else if (history.length >= 3) {
+            // For smaller histories, check if last game is better than average
+            const lastPF = history[0].performanceFactor || 1;
+            const avgPF = history.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / history.length;
+
+            if (lastPF > avgPF * 1.1) {
+                trendText = "Improving";
+                trendIndicator = "↗️";
+            } else if (lastPF < avgPF * 0.9) {
+                trendText = "Needs Practice";
+                trendIndicator = "↘️";
+            }
+        }
+
+        // === STRENGTHS & WEAKNESSES ANALYSIS ===
+        const analysis = analyzePerformance(history);
+
+        // === PERSONALIZED RECOMMENDATION ===
+        const recommendation = generateRecommendation(history, analysis);
+
+        // === UPDATE UI ===
+
+        // Core stats with trend indicators
+        const brainAgeTrend = getTrendIndicatorForMetric(history, 'brainAge', true); // true = lower is better
+        const iqTrend = getTrendIndicatorForMetric(history, 'iq', false); // false = higher is better
+        const scoreTrend = getTrendIndicatorForMetric(history, 'memoryScore', false);
+        const focusTrend = getTrendIndicatorForMetric(history, 'focusScore', false);
+
+        profileBrainAge.textContent = `${avgBrainAge} yrs ${brainAgeTrend}`;
+        profileIQ.textContent = `${avgIQ} ${iqTrend}`;
+        profileScore.textContent = `${maxScore} ${scoreTrend}`;
+        profileFocus.textContent = `${avgFocus}% ${focusTrend}`;
+        profileRank.textContent = currentRank;
+        profileGames.textContent = history.length;
+
+        // Show insights only if we have enough data
+        if (history.length >= 3) {
+            profileInsights.classList.remove('hidden');
+            profileTrend.textContent = `${trendText} ${trendIndicator}`;
+            profileStrengths.textContent = analysis.strengths.join(', ');
+            profileWeaknesses.textContent = analysis.weaknesses.join(', ');
+        } else {
+            profileInsights.classList.add('hidden');
+        }
+
+        // Show recommendation
+        if (recommendation) {
+            profileRecommendation.classList.remove('hidden');
+            profileSuggestion.textContent = recommendation;
+        } else {
+            profileRecommendation.classList.add('hidden');
+        }
+
+        // Add rank color coding
+        profileRank.className = 'stat-value rank-badge rank-' + currentRank.toLowerCase();
+    }
+
+    // Helper: Get trend indicator for a specific metric
+    function getTrendIndicatorForMetric(history, metricName, lowerIsBetter = false) {
+        if (history.length < 3) return '';
+
+        const recent = history.slice(0, Math.min(3, history.length));
+        const older = history.slice(3, Math.min(6, history.length));
+
+        if (older.length === 0) return '';
+
+        const recentAvg = recent.reduce((sum, g) => sum + (g[metricName] || 0), 0) / recent.length;
+        const olderAvg = older.reduce((sum, g) => sum + (g[metricName] || 0), 0) / older.length;
+
+        const threshold = 1.05; // 5% change threshold
+        const isImproving = lowerIsBetter ? (recentAvg < olderAvg / threshold) : (recentAvg > olderAvg * threshold);
+        const isDeclining = lowerIsBetter ? (recentAvg > olderAvg * threshold) : (recentAvg < olderAvg / threshold);
+
+        if (isImproving) return '↗️';
+        if (isDeclining) return '↘️';
+        return '↔️';
+    }
+
+    // Analyze performance across key areas
+    function analyzePerformance(history) {
+        if (history.length < 3) {
+            return {
+                strengths: ['Not enough data'],
+                weaknesses: ['Play more games']
+            };
+        }
+
+        const scores = {
+            speed: 0,
+            accuracy: 0,
+            consistency: 0,
+            focus: 0
+        };
+
+        // Analyze each game
+        history.forEach(game => {
+            const benchmarks = {
+                easy: { expectedTime: 30, expectedMoves: 16 },
+                medium: { expectedTime: 90, expectedMoves: 36 },
+                hard: { expectedTime: 150, expectedMoves: 54 }
+            };
+            const bench = benchmarks[game.difficulty] || benchmarks.medium;
+
+            // Speed: time performance
+            const timeRatio = bench.expectedTime / (game.time || bench.expectedTime);
+            scores.speed += timeRatio;
+
+            // Accuracy: move efficiency (we don't have moves in saved data, use PF as proxy)
+            const pf = game.performanceFactor || 1;
+            scores.accuracy += pf;
+
+            // Focus: based on focus score
+            scores.focus += (game.focusScore || 50) / 100;
+        });
+
+        // Calculate averages
+        Object.keys(scores).forEach(key => {
+            scores[key] = scores[key] / history.length;
+        });
+
+        // Consistency: calculate standard deviation of performance factors
+        const pfs = history.map(g => g.performanceFactor || 1);
+        const avgPF = pfs.reduce((a, b) => a + b, 0) / pfs.length;
+        const variance = pfs.reduce((sum, pf) => sum + Math.pow(pf - avgPF, 2), 0) / pfs.length;
+        const stdDev = Math.sqrt(variance);
+        scores.consistency = Math.max(0, 1 - stdDev); // Lower stdDev = higher consistency
+
+        // Identify top 2 strengths and weaknesses
+        const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+        const strengthNames = {
+            speed: 'Speed',
+            accuracy: 'Accuracy',
+            consistency: 'Consistency',
+            focus: 'Focus'
+        };
+
+        const strengths = sortedScores.slice(0, 2).map(([key]) => strengthNames[key]);
+        const weaknesses = sortedScores.slice(-2).reverse().map(([key]) => strengthNames[key]);
+
+        return { strengths, weaknesses, scores };
+    }
+
+    // Generate personalized recommendation
+    function generateRecommendation(history, analysis) {
+        if (history.length === 0) return null;
+
+        const lastGame = history[0];
+        const lastGameDate = new Date(lastGame.date);
+        const daysSinceLastGame = Math.floor((Date.now() - lastGameDate) / (1000 * 60 * 60 * 24));
+
+        // Check time since last play
+        if (daysSinceLastGame > 7) {
+            return "Welcome back! Start with Easy mode to warm up your memory.";
+        }
+
+        // Check difficulty progression
+        const recentGames = history.slice(0, 5);
+        const difficultyCount = {
+            easy: recentGames.filter(g => g.difficulty === 'easy').length,
+            medium: recentGames.filter(g => g.difficulty === 'medium').length,
+            hard: recentGames.filter(g => g.difficulty === 'hard').length
+        };
+
+        // Calculate average PF for each difficulty
+        const avgPFByDifficulty = {};
+        ['easy', 'medium', 'hard'].forEach(diff => {
+            const games = history.filter(g => g.difficulty === diff);
+            if (games.length > 0) {
+                avgPFByDifficulty[diff] = games.reduce((sum, g) => sum + (g.performanceFactor || 1), 0) / games.length;
+            }
+        });
+
+        // Suggest difficulty progression
+        if (avgPFByDifficulty.easy && avgPFByDifficulty.easy > 1.2 && difficultyCount.easy >= 3 && !avgPFByDifficulty.medium) {
+            return "You're mastering Easy mode! Try Medium difficulty to challenge yourself.";
+        }
+        if (avgPFByDifficulty.medium && avgPFByDifficulty.medium > 1.2 && difficultyCount.medium >= 3 && !avgPFByDifficulty.hard) {
+            return "Great performance on Medium! You're ready for Hard mode.";
+        }
+
+        // Based on weaknesses
+        if (analysis.scores) {
+            if (analysis.scores.speed < 0.8) {
+                return "Focus on improving your speed. Try to remember card positions quickly.";
+            }
+            if (analysis.scores.accuracy < 0.9) {
+                return "Take your time to improve accuracy. Remember card positions before flipping.";
+            }
+            if (analysis.scores.consistency < 0.7) {
+                return "Try to play more regularly to build consistency and muscle memory.";
+            }
+            if (analysis.scores.focus < 0.7) {
+                return "Reduce mistakes by carefully tracking which cards you've seen.";
+            }
+        }
+
+        // Based on rank
+        const lastRank = lastGame.rank || 'Learner';
+        if (lastRank === 'Legend' || lastRank === 'Genius') {
+            return "Outstanding performance! Keep challenging yourself on Hard mode.";
+        }
+
+        // Generic encouragement
+        const recentPF = (lastGame.performanceFactor || 1);
+        if (recentPF > 1.1) {
+            return "Great job! You're performing above average. Keep it up!";
+        } else if (recentPF < 0.9) {
+            return "Practice makes perfect! Try playing a few games to improve your score.";
+        }
+
+        return "Keep practicing to improve your memory and cognitive skills!";
     }
 });
