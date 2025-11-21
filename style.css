@@ -411,7 +411,7 @@ body {
 
 /* History List */
 .history-list {
-    max-height: 200px;
+    max-height: 520px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
