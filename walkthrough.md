@@ -17,7 +17,7 @@ I have enhanced the SEO and social media presence of your Memory Game website. H
 ## 3. Social Media Optimization (Open Graph & Twitter Cards)
 - **Open Graph**: Added tags so that when the link is shared on Facebook, LinkedIn, etc., it shows a rich preview with the title, description, and the new logo.
 - **Twitter Cards**: Added tags for a large image summary card on Twitter.
-- **URL**: Configured to point to `https://harshitsinghchouhan.github.io/Memory-Game/`.
+- **URL**: Configured to point to `https://haryskit.github.io/Memory-Game/`.
 
 ## 4. Search Engine Indexing
 - **robots.txt**: Created a file to tell search engines they are allowed to crawl the site.
