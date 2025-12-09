@@ -16,6 +16,11 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--bg-color);
@@ -25,6 +30,8 @@ body {
   justify-content: center;
   align-items: center;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Background Blobs */
@@ -74,6 +81,21 @@ body {
   animation-delay: -10s;
 }
 
+@media (max-width: 480px) {
+  .blob-1 {
+    width: 250px;
+    height: 250px;
+  }
+  .blob-2 {
+    width: 300px;
+    height: 300px;
+  }
+  .blob-3 {
+    width: 200px;
+    height: 200px;
+  }
+}
+
 @keyframes float {
   0%, 100% {
     transform: translate(0, 0) scale(1);
@@ -97,6 +119,23 @@ body {
   align-items: center;
   padding: 20px;
   position: relative;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 12px;
+    min-height: 100vh;
+    justify-content: flex-start;
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-container {
+    padding: 8px;
+    padding-top: 12px;
+  }
 }
 
 /* Screens */

@@ -5,6 +5,8 @@
   aspect-ratio: 1;
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card.flipped {
@@ -24,6 +26,19 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--glass-border);
   user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 480px) {
+  .card-face {
+    font-size: clamp(1.25rem, 5vw, 2rem);
+  }
+}
+
+@media (max-width: 360px) {
+  .card-face {
+    font-size: clamp(1rem, 5vw, 1.75rem);
+  }
 }
 
 .card-front {
@@ -59,6 +74,13 @@
 @media (max-width: 480px) {
   .card-face {
     border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (max-width: 360px) {
+  .card-face {
+    border-radius: 6px;
   }
 }
 
