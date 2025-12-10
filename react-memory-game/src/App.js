@@ -10,11 +10,51 @@ function App() {
   const [difficulty, setDifficulty] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [gameId, setGameId] = useState(0);
+
+  // Handle back button
+  React.useEffect(() => {
+    const handlePopState = (event) => {
+      if (currentScreen === 'game') {
+        // Prevent default back
+        window.history.pushState(null, document.title, window.location.href);
+
+        const confirmLeave = window.confirm("Are you sure you want to quit the game?");
+        if (confirmLeave) {
+          handleHome();
+        }
+      }
+    };
+
+    if (currentScreen === 'game') {
+      // Push a state so we can pop it
+      window.history.pushState(null, document.title, window.location.href);
+      window.addEventListener('popstate', handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [currentScreen]);
+
+  // Handle tab close / refresh
+  React.useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (currentScreen === 'game') {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentScreen]);
 
   const handleStartGame = (level) => {
     setDifficulty(level);
     setCurrentScreen('game');
     setShowModal(false);
+    setGameId(prev => prev + 1); // Ensure fresh game on start
   };
 
   const handleHome = () => {
@@ -42,12 +82,13 @@ function App() {
     setShowModal(false);
     setGameData(null);
     if (difficulty) {
+      setGameId(prev => prev + 1); // Force remount of GameScreen
       setCurrentScreen('game');
     }
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${currentScreen === 'game' ? 'game-active' : ''}`}>
       <div className="background-blobs">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
@@ -57,6 +98,7 @@ function App() {
       {currentScreen === 'start' && <StartScreen onStartGame={handleStartGame} />}
       {currentScreen === 'game' && difficulty && (
         <GameScreen
+          key={gameId}
           difficulty={difficulty}
           onHome={handleHome}
           onGameComplete={handleGameComplete}
@@ -70,14 +112,6 @@ function App() {
           onHome={handleHome}
         />
       )}
-
-      <footer className="site-footer">
-        <p className="footer-text">
-          Crafted with <span className="footer-heart">❤️</span> by <span className="footer-name">Harshit Singh
-            Chouhan</span>
-        </p>
-        <p className="footer-copyright">© 2025 Memory Master. All rights reserved.</p>
-      </footer>
     </div>
   );
 }

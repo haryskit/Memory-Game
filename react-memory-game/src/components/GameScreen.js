@@ -160,7 +160,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
   };
 
   const gridStyle = {
-    gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
+    '--cols': config.cols,
     maxWidth: difficulty === 'hard' ? '800px' : '600px'
   };
 
@@ -190,7 +190,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
         </button>
       </header>
 
-      <div id="game-board" className="game-board" style={gridStyle}>
+      <div id="game-board" className={`game-board ${difficulty}`} style={gridStyle}>
         {cards.map(card => (
           <Card
             key={card.id}
