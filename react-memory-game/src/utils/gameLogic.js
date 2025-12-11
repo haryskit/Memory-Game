@@ -31,14 +31,21 @@ export function generateCards(pairsCount) {
   return shuffleArray(cardValues);
 }
 
-export function calculateMedicalStats(time, moves, difficulty, mistakes, totalPairs, maxCombo) {
+export function calculateMedicalStats(
+  time = 0,
+  moves = 0,
+  difficulty = 'easy',
+  mistakes = 0,
+  totalPairs = 8,
+  maxCombo = 0
+) {
   // Benchmarks & Config
   const benchmarks = {
     easy: { expectedMoves: 16, expectedTime: 30, difficultyMultiplier: 1 },
     medium: { expectedMoves: 36, expectedTime: 90, difficultyMultiplier: 1.5 },
     hard: { expectedMoves: 54, expectedTime: 150, difficultyMultiplier: 2.5 }
   };
-  const config = benchmarks[difficulty];
+  const config = benchmarks[difficulty] || benchmarks.easy;
 
   // Dynamic Difficulty Scaling (DDS)
   const history = JSON.parse(localStorage.getItem('memoryGameHistory') || '[]');

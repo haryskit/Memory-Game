@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Memory Master GO</string>
-    <string name="title_activity_main">Memory Master GO</string>
-    <string name="package_name">com.memorygame.app</string>
-    <string name="custom_url_scheme">com.memorygame.app</string>
+    <string name="app_name">Memory Master Go</string>
+    <string name="title_activity_main">Memory Master Go</string>
+    <string name="package_name">app.memorymastergo.com</string>
+    <string name="custom_url_scheme">app.memorymastergo.com</string>
 </resources>

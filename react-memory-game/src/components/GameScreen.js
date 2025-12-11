@@ -17,7 +17,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
   const [mistakes, setMistakes] = useState(0);
   const [currentCombo, setCurrentCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [showRestartModal, setShowRestartModal] = useState(false);
+  const [hasCompleted, setHasCompleted] = useState(false);
 
   const config = difficulties[difficulty];
   const totalPairs = (config.rows * config.cols) / 2;
@@ -28,16 +28,17 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
 
   useEffect(() => {
     let interval = null;
-    if (matchedPairs < totalPairs && !showRestartModal) {
+    if (matchedPairs < totalPairs && !showRestartModal && !hasCompleted) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [matchedPairs, totalPairs, showRestartModal]);
+  }, [matchedPairs, totalPairs, showRestartModal, hasCompleted]);
 
   useEffect(() => {
-    if (matchedPairs === totalPairs && totalPairs > 0) {
+    if (matchedPairs === totalPairs && totalPairs > 0 && !hasCompleted) {
+      setHasCompleted(true); // Lock it immediately
       const timeout = setTimeout(() => {
         onGameComplete({
           time: timer,
@@ -51,7 +52,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [matchedPairs, totalPairs, timer, moves, difficulty, mistakes, maxCombo, moveHistory, onGameComplete]);
+  }, [matchedPairs, totalPairs, timer, moves, difficulty, mistakes, maxCombo, moveHistory, onGameComplete, hasCompleted]);
 
   const initializeGame = () => {
     const cardValues = generateCards(totalPairs);
@@ -74,6 +75,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
     setCurrentCombo(0);
     setMaxCombo(0);
     setShowRestartModal(false);
+    setHasCompleted(false);
   };
 
   const handleCardClick = useCallback((card) => {

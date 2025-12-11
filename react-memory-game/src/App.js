@@ -106,19 +106,25 @@ function App() {
     setShowLeaveModal(false);
   };
 
-  const handleGameComplete = (data) => {
+  const handleGameComplete = React.useCallback((data) => {
+    console.log("Game Complete Data:", data);
+
+    // Ensure all required fields are present to avoid NaN
+    // If GameScreen didn't pass them, these defaults or the function defaults will handle it
     const stats = calculateMedicalStats(
-      data.time,
-      data.moves,
-      data.difficulty,
-      data.mistakes,
-      data.totalPairs,
-      data.maxCombo
+      data.time || 0,
+      data.moves || 0,
+      data.difficulty || 'easy',
+      data.mistakes || 0,
+      data.totalPairs || 8,
+      data.maxCombo || 0
     );
+
+    console.log("Calculated Stats:", stats);
     saveGameResult(stats);
     setGameData(stats);
     setShowModal(true);
-  };
+  }, []);
 
   const handlePlayAgain = () => {
     setShowModal(false);
