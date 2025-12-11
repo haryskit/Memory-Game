@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Card from './Card';
 import ConfirmationModal from './ConfirmationModal';
 import { generateCards, difficulties } from '../utils/gameLogic';
@@ -17,7 +17,10 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
   const [mistakes, setMistakes] = useState(0);
   const [currentCombo, setCurrentCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [hasCompleted, setHasCompleted] = useState(false);
+  const [showRestartModal, setShowRestartModal] = useState(false);
+
+  // Use ref instead of state to avoid re-triggering effects and cancelling the timeout
+  const gameCompletedRef = useRef(false);
 
   const config = difficulties[difficulty];
   const totalPairs = (config.rows * config.cols) / 2;
@@ -28,17 +31,18 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
 
   useEffect(() => {
     let interval = null;
-    if (matchedPairs < totalPairs && !showRestartModal && !hasCompleted) {
+    if (matchedPairs < totalPairs && !showRestartModal && !gameCompletedRef.current) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [matchedPairs, totalPairs, showRestartModal, hasCompleted]);
+  }, [matchedPairs, totalPairs, showRestartModal]);
 
   useEffect(() => {
-    if (matchedPairs === totalPairs && totalPairs > 0 && !hasCompleted) {
-      setHasCompleted(true); // Lock it immediately
+    if (matchedPairs === totalPairs && totalPairs > 0 && !gameCompletedRef.current) {
+      gameCompletedRef.current = true; // Lock it immediately without triggering re-render
+
       const timeout = setTimeout(() => {
         onGameComplete({
           time: timer,
@@ -52,7 +56,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [matchedPairs, totalPairs, timer, moves, difficulty, mistakes, maxCombo, moveHistory, onGameComplete, hasCompleted]);
+  }, [matchedPairs, totalPairs, timer, moves, difficulty, mistakes, maxCombo, moveHistory, onGameComplete]);
 
   const initializeGame = () => {
     const cardValues = generateCards(totalPairs);
@@ -75,7 +79,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
     setCurrentCombo(0);
     setMaxCombo(0);
     setShowRestartModal(false);
-    setHasCompleted(false);
+    gameCompletedRef.current = false;
   };
 
   const handleCardClick = useCallback((card) => {
