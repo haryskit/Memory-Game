@@ -1,5 +1,5 @@
 {
-  "name": "react-memory-game",
+  "name": "Memory Master GO",
   "version": "1.0.0",
   "description": "Memory Master - Brain Training & Cognitive Assessment Game",
   "private": true,
@@ -7,6 +7,7 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"

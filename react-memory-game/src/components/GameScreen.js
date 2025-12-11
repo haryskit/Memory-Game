@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Card from './Card';
+import ConfirmationModal from './ConfirmationModal';
 import { generateCards, difficulties } from '../utils/gameLogic';
 import '../styles/GameScreen.css';
 
@@ -16,6 +17,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
   const [mistakes, setMistakes] = useState(0);
   const [currentCombo, setCurrentCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
+  const [showRestartModal, setShowRestartModal] = useState(false);
 
   const config = difficulties[difficulty];
   const totalPairs = (config.rows * config.cols) / 2;
@@ -26,13 +28,13 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
 
   useEffect(() => {
     let interval = null;
-    if (matchedPairs < totalPairs) {
+    if (matchedPairs < totalPairs && !showRestartModal) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [matchedPairs, totalPairs]);
+  }, [matchedPairs, totalPairs, showRestartModal]);
 
   useEffect(() => {
     if (matchedPairs === totalPairs && totalPairs > 0) {
@@ -71,6 +73,7 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
     setMistakes(0);
     setCurrentCombo(0);
     setMaxCombo(0);
+    setShowRestartModal(false);
   };
 
   const handleCardClick = useCallback((card) => {
@@ -164,6 +167,19 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
     maxWidth: difficulty === 'hard' ? '800px' : '600px'
   };
 
+  // Handle restart modal
+  const handleRestartClick = () => {
+    setShowRestartModal(true);
+  };
+
+  const handleConfirmRestart = () => {
+    initializeGame();
+  };
+
+  const handleCancelRestart = () => {
+    setShowRestartModal(false);
+  };
+
   return (
     <div className="screen active" id="game-screen">
       <header className="game-header">
@@ -182,10 +198,11 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
           <span className="stat-label">Moves</span>
           <span id="moves" className="stat-value">{moves}</span>
         </div>
-        <button id="restart-btn" className="btn-icon" onClick={initializeGame} aria-label="Restart">
+        <button id="restart-btn" className="btn-icon" onClick={handleRestartClick} aria-label="Restart">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" />
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
         </button>
       </header>
@@ -202,6 +219,16 @@ function GameScreen({ difficulty, onHome, onGameComplete }) {
           />
         ))}
       </div>
+
+      <ConfirmationModal
+        isOpen={showRestartModal}
+        title="Restart Game?"
+        message="Current progress will be lost. Are you sure you want to restart?"
+        onConfirm={handleConfirmRestart}
+        onCancel={handleCancelRestart}
+        confirmText="Restart"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { loadHistory, analyzePerformance, generateRecommendation, getTrendIndicatorForMetric } from '../utils/gameLogic';
 import '../styles/StartScreen.css';
+import { NotificationSystem } from '../utils/notificationSystem';
 
-function StartScreen({ onStartGame }) {
+function StartScreen({ onStartGame, userProfile }) {
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [history, setHistory] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -14,11 +15,12 @@ function StartScreen({ onStartGame }) {
   }, []);
 
   const updateProfile = (gameHistory) => {
+    // ... (existing updateProfile logic)
     if (gameHistory.length === 0) {
       setProfile(null);
       return;
     }
-
+    // ... (rest of logic mostly same, keeping it brief if possible or just assuming unchanged parts remain)
     const avgBrainAge = Math.round(gameHistory.reduce((sum, g) => sum + g.brainAge, 0) / gameHistory.length);
     const avgIQ = Math.round(gameHistory.reduce((sum, g) => sum + g.iq, 0) / gameHistory.length);
     const maxScore = Math.max(...gameHistory.map(g => g.memoryScore));
@@ -103,8 +105,11 @@ function StartScreen({ onStartGame }) {
       {!showDifficulty ? (
         <>
           <div className="hero-section">
-            <h1 className="game-title">Memory<br />Master</h1>
-            <p className="game-subtitle">Unlock Your Brain's Potential</p>
+            <h1 className="game-title">Memory<br />Master GO</h1>
+            <p className="game-subtitle">
+              Welcome {userProfile?.name ? userProfile.name : 'Player'},<br />
+              Unlock Your Brain's Potential
+            </p>
             <button id="play-now-btn" className="btn-primary btn-large" onClick={handlePlayNow}>
               Play Now
             </button>
@@ -149,7 +154,7 @@ function StartScreen({ onStartGame }) {
                     </div>
                     <div className="profile-stat-item">
                       <span className="stat-label">Games Played</span>
-                      <span id="profile-games" className="stat-value">{history.length}</span>
+                      <span className="stat-value">{history.length}</span>
                     </div>
                   </div>
 
@@ -250,11 +255,29 @@ function StartScreen({ onStartGame }) {
                 )}
               </div>
             </div>
+
+
+            <a
+              href="https://haryskit.github.io/Memory-Game/privacy-policy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                marginTop: '1.5rem',
+                color: '#ec4899',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                justifySelf: 'center',
+              }}
+            >
+              Privacy Policy
+            </a>
           </div>
         </>
       ) : (
         <div id="difficulty-section" className="difficulty-selector">
-          <h3>Select Difficulty</h3>
+          <h2>Select Difficulty</h2>
           <div className="buttons">
             <button className="btn-difficulty" data-level="easy" onClick={() => handleDifficultySelect('easy')}>
               <div className="diff-icon">🌱</div>

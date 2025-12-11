@@ -32,6 +32,10 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  /* Disables double-tap zoom globally */
+  -webkit-touch-callout: none;
+  /* Disables callout menu on iOS */
 }
 
 /* Background Blobs */
@@ -265,5 +269,57 @@ body {
 
   .footer-copyright {
     font-size: 0.7rem;
+  }
+}
+
+/* Orientation Lock Overlay */
+#orientation-lock {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-color);
+  z-index: 9999;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+#orientation-lock p {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-top: 1rem;
+}
+
+#orientation-lock .icon {
+  font-size: 3rem;
+  animation: rotate-phone 2s infinite ease-in-out;
+}
+
+@keyframes rotate-phone {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(-90deg);
+  }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  #orientation-lock {
+    display: flex;
+  }
+
+  /* Hide the main app content behind the overlay */
+  .app-container {
+    display: none;
   }
 }

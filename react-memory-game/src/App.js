@@ -1,28 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StartScreen from './components/StartScreen';
 import GameScreen from './components/GameScreen';
 import GameOverModal from './components/GameOverModal';
-import { saveGameResult } from './utils/gameLogic';
+import Onboarding from './components/Onboarding';
+import ConfirmationModal from './components/ConfirmationModal';
+import { saveGameResult, calculateMedicalStats } from './utils/gameLogic';
 import './App.css';
 
+import { NotificationSystem } from './utils/notificationSystem';
+
 function App() {
-  const [currentScreen, setCurrentScreen] = useState('start');
+  const [currentScreen, setCurrentScreen] = useState('loading'); // Start with loading to check auth
   const [difficulty, setDifficulty] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [gameId, setGameId] = useState(0);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('memoryGameUserProfile');
+    if (savedProfile) {
+      const profile = JSON.parse(savedProfile);
+      setUserProfile(profile);
+      setCurrentScreen('start');
+
+      // Initialize Notifications with username
+      NotificationSystem.requestPermissions().then((granted) => {
+        if (granted) {
+          NotificationSystem.scheduleDailyNotifications(profile.name);
+        }
+      });
+    } else {
+      setCurrentScreen('onboarding');
+    }
+  }, []);
+
+  const handleOnboardingComplete = (profile) => {
+    localStorage.setItem('memoryGameUserProfile', JSON.stringify(profile));
+    setUserProfile(profile);
+    setCurrentScreen('start');
+
+    // Initialize Notifications
+    NotificationSystem.requestPermissions().then((granted) => {
+      if (granted) {
+        NotificationSystem.scheduleDailyNotifications(profile.name);
+      }
+    });
+  };
 
   // Handle back button
-  React.useEffect(() => {
+  useEffect(() => {
     const handlePopState = (event) => {
       if (currentScreen === 'game') {
-        // Prevent default back
+        // Prevent default back navigation by pushing state again
         window.history.pushState(null, document.title, window.location.href);
-
-        const confirmLeave = window.confirm("Are you sure you want to quit the game?");
-        if (confirmLeave) {
-          handleHome();
-        }
+        setShowLeaveModal(true);
       }
     };
 
@@ -34,11 +67,12 @@ function App() {
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      // Clean up state if component unmounts not via back button
     };
   }, [currentScreen]);
 
-  // Handle tab close / refresh
-  React.useEffect(() => {
+  // Handle tab close / refresh (Browsers do NOT support custom UI for this)
+  useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (currentScreen === 'game') {
         e.preventDefault();
@@ -61,10 +95,18 @@ function App() {
     setCurrentScreen('start');
     setShowModal(false);
     setGameData(null);
+    setShowLeaveModal(false);
+  };
+
+  const handleLeaveConfirm = () => {
+    handleHome();
+  };
+
+  const handleLeaveCancel = () => {
+    setShowLeaveModal(false);
   };
 
   const handleGameComplete = (data) => {
-    const { calculateMedicalStats } = require('./utils/gameLogic');
     const stats = calculateMedicalStats(
       data.time,
       data.moves,
@@ -74,7 +116,7 @@ function App() {
       data.maxCombo
     );
     saveGameResult(stats);
-    setGameData(data);
+    setGameData(stats);
     setShowModal(true);
   };
 
@@ -95,12 +137,20 @@ function App() {
         <div className="blob blob-3"></div>
       </div>
 
-      {currentScreen === 'start' && <StartScreen onStartGame={handleStartGame} />}
+      {currentScreen === 'onboarding' && <Onboarding onComplete={handleOnboardingComplete} />}
+
+      {currentScreen === 'start' && (
+        <StartScreen
+          onStartGame={handleStartGame}
+          userProfile={userProfile}
+        />
+      )}
+
       {currentScreen === 'game' && difficulty && (
         <GameScreen
           key={gameId}
           difficulty={difficulty}
-          onHome={handleHome}
+          onHome={() => setShowLeaveModal(true)}
           onGameComplete={handleGameComplete}
         />
       )}
@@ -112,9 +162,23 @@ function App() {
           onHome={handleHome}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={showLeaveModal}
+        title="Leaving so soon?"
+        message="Stay a while longer to increase your brain capacity! Are you sure you want to exit?"
+        onConfirm={handleLeaveConfirm}
+        onCancel={handleLeaveCancel}
+        confirmText="Exit Game"
+        cancelText="Keep Playing"
+      />
+
+      <div id="orientation-lock">
+        <div className="icon">📱</div>
+        <p>Please Rotate Your Device</p>
+      </div>
     </div>
   );
 }
 
 export default App;
-

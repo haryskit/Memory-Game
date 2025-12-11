@@ -22,7 +22,7 @@ A modern memory card matching game built with React, featuring brain age assessm
 
 1. Navigate to the project directory:
 ```bash
-cd react-memory-game
+cd Memory Master GO
 ```
 
 2. Install dependencies:
@@ -48,7 +48,7 @@ This creates an optimized production build in the `build` folder.
 ## Project Structure
 
 ```
-react-memory-game/
+Memory Master GO/
 ├── public/
 │   ├── images/
 │   └── index.html

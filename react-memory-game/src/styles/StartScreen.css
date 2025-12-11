@@ -1,14 +1,20 @@
 /* Start Screen Layout */
 #start-screen {
-  gap: 2rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: 800px;
+  padding: 10px 0;
+  /* Reduced vertical padding */
 }
 
 @media (max-width: 480px) {
   #start-screen {
     gap: 1.25rem;
     width: 100%;
+    min-height: calc(100vh - 100px);
+    /* Ensure full height minus padding/footer */
+    justify-content: center;
+    /* Vertical centering */
   }
 }
 
@@ -21,6 +27,7 @@
 .hero-section {
   text-align: center;
   margin-bottom: 1rem;
+  margin-top: 3rem;
 }
 
 .game-title {
@@ -60,6 +67,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   width: 100%;
+  margin-bottom: 3rem;
 }
 
 @media (max-width: 768px) {
@@ -444,7 +452,6 @@
   padding: 2rem;
   border-radius: 24px;
   width: 100%;
-  max-width: 500px;
   text-align: center;
   animation: fadeIn 0.3s ease-out;
   margin: 0 auto;
@@ -500,6 +507,8 @@
   text-align: left;
   min-height: 60px;
   touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @media (max-width: 480px) {
@@ -601,6 +610,8 @@
   box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
   touch-action: manipulation;
   min-height: 48px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .btn-primary:hover {
@@ -614,7 +625,10 @@
 
 .btn-large {
   font-size: 1.5rem;
-  padding: 1.2rem 3.5rem;
+  padding: 1.5rem 4rem;
+  /* Larger padding */
+  min-height: 64px;
+  /* Taller button */
 }
 
 @media (max-width: 480px) {
